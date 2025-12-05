@@ -13,8 +13,15 @@ fn main() -> Result<()> {
 
     let args = Args::parse();
 
-    let input_file = File::open(&args.input)?;
-    let _input_font = PsfFont::from_file(input_file)?;
+    let input_file = File::open(&args.input_path)?;
+    let font = PsfFont::from_file(input_file)?;
+
+    println!("Font:");
+    println!("  Glyph size: {}x{}", font.glyph_size.0, font.glyph_size.1);
+    println!("  Glyphs: {}", font.glyphs.len());
+    if let Some(unicode_table) = font.unicode_table {
+        println!("  Unicode table length: {}", unicode_table.len());
+    }
 
     Ok(())
 }
