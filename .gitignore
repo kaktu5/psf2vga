@@ -1,0 +1,12 @@
+*
+!src/
+!src/**
+!.envrc
+!.gitignore
+!.rustfmt.toml
+!.taplo.toml
+!Cargo.lock
+!Cargo.toml
+!flake.lock
+!flake.nix
+!license
