@@ -1,13 +1,18 @@
 use std::{
+    collections::HashMap,
     fs::File,
-    io::{Read, Seek as _},
-    ptr,
+    io::{Read, Seek as _, SeekFrom},
+    str,
 };
 
-use color_eyre::{Result, eyre::bail};
+use color_eyre::{
+    Result,
+    eyre::{bail, eyre},
+};
+use zerocopy::{FromBytes, Immutable, KnownLayout};
 
-#[repr(C, packed)]
-#[derive(Debug, Copy, Clone)]
+#[repr(C)]
+#[derive(Clone, Copy, Debug, FromBytes, Immutable, KnownLayout)]
 pub struct Psf1Header {
     pub magic: u16,
     pub mode: u8,
@@ -15,46 +20,109 @@ pub struct Psf1Header {
 }
 
 impl Psf1Header {
-    pub fn from_reader<R: Read>(reader: &mut R) -> Result<Self> {
-        let mut header_bytes = [0u8; 4];
-        reader.read_exact(&mut header_bytes)?;
+    const HAS_512_GLYPHS: u8 = 0x01;
+    const HAS_UNICODE_TABLE: u8 = 0x02 | 0x04;
 
-        Ok(unsafe { ptr::read_unaligned(header_bytes.as_ptr().cast()) })
+    pub fn from_reader<R: Read>(reader: &mut R) -> Result<Self> {
+        let mut buf = [0u8; 4];
+        reader.read_exact(&mut buf)?;
+        Self::read_from_bytes(&buf[..]).map_err(|_| eyre!("Invalid PSF1 header format"))
+    }
+
+    const fn glyph_count(self) -> u16 {
+        if self.mode & Self::HAS_512_GLYPHS != 0 {
+            512
+        } else {
+            256
+        }
+    }
+
+    const fn has_unicode_table(self) -> bool {
+        self.mode & Self::HAS_UNICODE_TABLE != 0
     }
 }
 
 pub struct Psf1Font {
     pub header: Psf1Header,
     pub glyphs: Vec<Vec<u8>>,
+    pub unicode_table: Option<HashMap<char, u16>>,
 }
 
 impl Psf1Font {
-    const MAGICS: [u16; 2] = [0x0436, 0x0001];
+    const MAGIC: u16 = 0x0436;
+    const ENTRY_END: u16 = 0xffff;
+    const SEQUENCE_START: u16 = 0xfffe;
 
     pub fn from_file(mut file: File) -> Result<Self> {
         let header = Psf1Header::from_reader(&mut file)?;
 
-        // creating a misaligned reference is undefined behavior
-        let magic = header.magic;
-        if !Self::MAGICS.contains(&magic) {
-            bail!("Invalid PSF1 magic number: `{:x}`", magic);
+        if header.magic != Self::MAGIC {
+            bail!("Invalid PSF1 magic number");
         }
 
-        let glyph_count = if (header.mode & 0x01) != 0 { 512 } else { 256 };
-        let mut glyphs = Vec::with_capacity(glyph_count);
+        let glyph_count: usize = if header.mode & 0x01 != 0 { 512 } else { 256 };
+        let glyph_size = header.glyph_size as usize;
 
-        for _ in 0..glyph_count {
-            let mut glyph = vec![0u8; header.glyph_size as usize];
-            file.read_exact(&mut glyph)?;
-            glyphs.push(glyph);
+        let mut glyph_data = vec![0u8; header.glyph_count() as usize * glyph_size];
+        file.read_exact(&mut glyph_data)?;
+
+        let glyphs = glyph_data
+            .chunks_exact(glyph_size)
+            .map(<[u8]>::to_vec)
+            .collect();
+
+        let unicode_table = header
+            .has_unicode_table()
+            .then(|| Self::read_unicode_table(&mut file, glyph_count))
+            .transpose()?;
+
+        Ok(Self {
+            header,
+            glyphs,
+            unicode_table,
+        })
+    }
+
+    fn read_unicode_table(file: &mut File, glyph_count: usize) -> Result<HashMap<char, u16>> {
+        let mut ut_data = Vec::new();
+        file.read_to_end(&mut ut_data)?;
+
+        let mut mappings = HashMap::new();
+        let mut offset = 0;
+
+        for glyph_index in 0..glyph_count {
+            while offset + 1 < ut_data.len() {
+                let code = u16::from_le_bytes([ut_data[offset], ut_data[offset + 1]]);
+                offset += 2;
+
+                match code {
+                    Self::ENTRY_END => break,
+                    Self::SEQUENCE_START => {
+                        while offset + 1 < ut_data.len() {
+                            let seq_code =
+                                u16::from_le_bytes([ut_data[offset], ut_data[offset + 1]]);
+                            offset += 2;
+                            if seq_code == Self::ENTRY_END {
+                                break;
+                            }
+                        }
+                        break;
+                    },
+                    code =>
+                        if let Some(char) = char::from_u32(u32::from(code)) {
+                            #[expect(clippy::cast_possible_truncation)]
+                            mappings.insert(char, glyph_index as u16);
+                        },
+                }
+            }
         }
 
-        Ok(Self { header, glyphs })
+        Ok(mappings)
     }
 }
 
-#[repr(C, packed)]
-#[derive(Debug, Copy, Clone)]
+#[repr(C)]
+#[derive(Clone, Copy, Debug, FromBytes, Immutable, KnownLayout)]
 pub struct Psf2Header {
     pub magic: u32,
     pub version: u32,
@@ -67,48 +135,53 @@ pub struct Psf2Header {
 }
 
 impl Psf2Header {
-    pub fn from_reader<R: Read>(reader: &mut R) -> Result<Self> {
-        let mut header_bytes = [0u8; 32];
-        reader.read_exact(&mut header_bytes)?;
+    const HAS_UNICODE_TABLE: u32 = 0x0000_0001;
 
-        Ok(unsafe { ptr::read_unaligned(header_bytes.as_ptr().cast()) })
+    pub fn from_reader<R: Read>(reader: &mut R) -> Result<Self> {
+        let mut buf = [0u8; 32];
+        reader.read_exact(&mut buf)?;
+        Self::read_from_bytes(&buf[..]).map_err(|_| eyre!("Invalid PSF2 header format"))
+    }
+
+    const fn has_unicode_table(self) -> bool {
+        self.flags & Self::HAS_UNICODE_TABLE != 0
     }
 }
 
 pub struct Psf2Font {
     pub header: Psf2Header,
     pub glyphs: Vec<Vec<u8>>,
-    pub unicode_table: Option<Vec<(u32, u32)>>,
+    pub unicode_table: Option<HashMap<char, u16>>,
 }
 
 impl Psf2Font {
     const MAGIC: u32 = 0x864a_b572;
+    const ENTRY_END: u8 = 0xff;
+    const SEQUENCE_START: u8 = 0xfe;
 
     pub fn from_file(mut file: File) -> Result<Self> {
         let header = Psf2Header::from_reader(&mut file)?;
 
         if header.magic != Self::MAGIC {
-            // creating a misaligned reference is undefined behavior
-            let magic = header.magic;
-            bail!("Invalid PSF2 magic number: `{:x}`", magic);
+            bail!("Invalid PSF2 magic number");
         }
         if header.version != 0 {
             let version = header.version;
             bail!("Unsupported PSF2 version: `{}`", version);
         }
 
-        let mut glyphs = Vec::with_capacity(header.length as usize);
-        let glyph_data_size = (header.length * header.glyph_size) as usize;
-        let mut glyph_data = vec![0u8; glyph_data_size];
+        let mut glyph_data = vec![0u8; (header.length * header.glyph_size) as usize];
         file.read_exact(&mut glyph_data)?;
 
-        for i in 0..header.length as usize {
-            let start = i * header.glyph_size as usize;
-            let end = start + header.glyph_size as usize;
-            glyphs.push(glyph_data[start..end].to_vec());
-        }
+        let glyphs = glyph_data
+            .chunks_exact(header.glyph_size as usize)
+            .map(<[u8]>::to_vec)
+            .collect();
 
-        let unicode_table = None;
+        let unicode_table = header
+            .has_unicode_table()
+            .then(|| Self::read_unicode_table(&mut file, header.length as usize))
+            .transpose()?;
 
         Ok(Self {
             header,
@@ -116,37 +189,95 @@ impl Psf2Font {
             unicode_table,
         })
     }
+
+    fn read_unicode_table(file: &mut File, glyph_count: usize) -> Result<HashMap<char, u16>> {
+        let mut ut_data = Vec::new();
+        file.read_to_end(&mut ut_data)?;
+
+        let mut mappings = HashMap::new();
+        let mut offset = 0;
+
+        for glyph_index in 0..glyph_count {
+            while offset < ut_data.len() {
+                match ut_data[offset] {
+                    Self::ENTRY_END => {
+                        offset += 1;
+                        break;
+                    },
+                    Self::SEQUENCE_START => {
+                        offset += 1;
+                        while offset < ut_data.len() {
+                            if ut_data[offset] == Self::ENTRY_END {
+                                offset += 1;
+                                break;
+                            }
+                            offset += 1;
+                        }
+                        break;
+                    },
+                    _ => {
+                        let remaining = &ut_data[offset..];
+                        let s = str::from_utf8(remaining)
+                            .map_err(|_| eyre!("Invalid UTF-8 in unicode table"))?;
+
+                        if let Some(ch) = s.chars().next() {
+                            #[expect(clippy::cast_possible_truncation)]
+                            mappings.insert(ch, glyph_index as u16);
+                            offset += ch.len_utf8();
+                        } else {
+                            break;
+                        }
+                    },
+                }
+            }
+        }
+
+        Ok(mappings)
+    }
 }
 
-pub enum PsfFont {
-    V1(Psf1Font),
-    V2(Psf2Font),
+pub struct PsfFont {
+    pub glyph_size: (u8, u8),
+    pub glyphs: Vec<Vec<u8>>,
+    pub unicode_table: Option<HashMap<char, u16>>,
+}
+
+impl From<Psf1Font> for PsfFont {
+    fn from(font: Psf1Font) -> Self {
+        Self {
+            glyph_size: (8, font.header.glyph_size),
+            glyphs: font.glyphs,
+            unicode_table: font.unicode_table,
+        }
+    }
+}
+
+impl From<Psf2Font> for PsfFont {
+    fn from(font: Psf2Font) -> Self {
+        Self {
+            #[expect(clippy::cast_possible_truncation)]
+            glyph_size: (font.header.width as u8, font.header.height as u8),
+            glyphs: font.glyphs,
+            unicode_table: font.unicode_table,
+        }
+    }
 }
 
 impl PsfFont {
     pub fn from_file(mut file: File) -> Result<Self> {
         let mut peek_bytes = [0u8; 4];
-        let bytes_read = file.read(&mut peek_bytes)?;
+        file.read_exact(&mut peek_bytes)?;
+        file.seek(SeekFrom::Start(0))?;
 
-        if bytes_read < 4 {
-            bail!("File too small to be a PSF font");
+        if u32::from_le_bytes(peek_bytes) == Psf2Font::MAGIC {
+            return Ok(Psf2Font::from_file(file)?.into());
         }
 
-        file.seek(std::io::SeekFrom::Start(0))?;
-
-        let possible_psf2_magic = u32::from_le_bytes(peek_bytes);
-        if possible_psf2_magic == Psf2Font::MAGIC {
-            return Ok(Self::V2(Psf2Font::from_file(file)?));
+        #[expect(clippy::unwrap_used)]
+        if u16::from_le_bytes(peek_bytes[..2].try_into().unwrap()) == Psf1Font::MAGIC {
+            return Ok(Psf1Font::from_file(file)?.into());
         }
 
-        let possible_psf1_magic = u16::from_le_bytes([peek_bytes[0], peek_bytes[1]]);
-        if Psf1Font::MAGICS.contains(&possible_psf1_magic) {
-            return Ok(Self::V1(Psf1Font::from_file(file)?));
-        }
-
-        bail!(
-            "File is neither PSF1 nor PSF2 format. Magic bytes: {:02x?}",
-            &peek_bytes[0..4]
-        )
+        bail!("File is neither PSF1 nor PSF2 format")
     }
 }
