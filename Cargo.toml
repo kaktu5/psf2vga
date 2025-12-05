@@ -6,6 +6,7 @@ version = "0.1.0"
 [dependencies]
 clap = { default-features = false, features = [
   "derive",
+  "env",
   "error-context",
   "help",
   "std",
@@ -13,7 +14,9 @@ clap = { default-features = false, features = [
   "wrap_help",
 ], version = "4.5.53" }
 color-eyre = "0.6.5"
+image = { default-features = false, features = ["png"], version = "0.25.9" }
 phf = { features = ["macros"], version = "0.13.1" }
+zerocopy = { features = ["derive"], version = "0.8.31" }
 
 [profile.release]
 codegen-units = 1
