@@ -6,11 +6,9 @@ use clap::Parser;
 #[derive(Parser)]
 pub struct Args {
     /// Input PSF font file
-    #[arg(env)]
     pub input_path: PathBuf,
 
     /// Output VGA font file
-    #[arg(env)]
     pub output_path: Option<PathBuf>,
 
     /// Generate preview images
@@ -18,6 +16,6 @@ pub struct Args {
     pub preview: bool,
 
     /// Increase logging verbosity
-    #[arg(short, long, env)]
+    #[arg(short, long)]
     pub verbose: bool,
 }
