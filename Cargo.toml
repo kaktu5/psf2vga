@@ -15,7 +15,7 @@ clap = { default-features = false, features = [
 ], version = "4.5.53" }
 color-eyre = "0.6.5"
 flate2 = "1.1.7"
-image = { default-features = false, features = ["png"], version = "0.25.9" }
+image = { default-features = false, features = ["webp"], version = "0.25.9" }
 zerocopy = { features = ["derive"], version = "0.8.31" }
 
 [profile.release]

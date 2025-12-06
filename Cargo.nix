@@ -568,21 +568,6 @@
         };
         resolvedDefaultFeatures = ["auto-install" "default" "track-caller"];
       };
-      "fdeflate" = rec {
-        crateName = "fdeflate";
-        version = "0.3.7";
-        edition = "2021";
-        sha256 = "130ga18vyxbb5idbgi07njymdaavvk6j08yh1dfarm294ssm6s0y";
-        authors = [
-          "The image-rs Developers"
-        ];
-        dependencies = [
-          {
-            name = "simd-adler32";
-            packageId = "simd-adler32";
-          }
-        ];
-      };
       "flate2" = rec {
         crateName = "flate2";
         version = "1.1.7";
@@ -675,17 +660,17 @@
             packageId = "byteorder-lite";
           }
           {
+            name = "image-webp";
+            packageId = "image-webp";
+            optional = true;
+          }
+          {
             name = "moxcms";
             packageId = "moxcms";
           }
           {
             name = "num-traits";
             packageId = "num-traits";
-          }
-          {
-            name = "png";
-            packageId = "png";
-            optional = true;
           }
         ];
         features = {
@@ -706,7 +691,26 @@
           "tiff" = ["dep:tiff"];
           "webp" = ["dep:image-webp"];
         };
-        resolvedDefaultFeatures = ["png"];
+        resolvedDefaultFeatures = ["webp"];
+      };
+      "image-webp" = rec {
+        crateName = "image-webp";
+        version = "0.2.4";
+        edition = "2021";
+        sha256 = "1hz814csyi9283vinzlkix6qpnd6hs3fkw7xl6z2zgm4w7rrypjj";
+        libName = "image_webp";
+        dependencies = [
+          {
+            name = "byteorder-lite";
+            packageId = "byteorder-lite";
+          }
+          {
+            name = "quick-error";
+            packageId = "quick-error";
+          }
+        ];
+        features = {
+        };
       };
       "indenter" = rec {
         crateName = "indenter";
@@ -815,7 +819,7 @@
           "simd" = ["simd-adler32"];
           "simd-adler32" = ["dep:simd-adler32"];
         };
-        resolvedDefaultFeatures = ["default" "simd" "simd-adler32" "with-alloc"];
+        resolvedDefaultFeatures = ["simd" "simd-adler32" "with-alloc"];
       };
       "moxcms" = rec {
         crateName = "moxcms";
@@ -934,42 +938,6 @@
         sha256 = "16wzc7z7dfkf9bmjin22f5282783f6mdksnr0nv0j5ym5f9gyg1v";
         libName = "pin_project_lite";
       };
-      "png" = rec {
-        crateName = "png";
-        version = "0.18.0";
-        edition = "2021";
-        sha256 = "187jf0m873qn5biix8z7gjdsyf8r6vj3yr495pa0jja6i39wxflp";
-        authors = [
-          "The image-rs Developers"
-        ];
-        dependencies = [
-          {
-            name = "bitflags";
-            packageId = "bitflags";
-          }
-          {
-            name = "crc32fast";
-            packageId = "crc32fast";
-          }
-          {
-            name = "fdeflate";
-            packageId = "fdeflate";
-          }
-          {
-            name = "flate2";
-            packageId = "flate2";
-          }
-          {
-            name = "miniz_oxide";
-            packageId = "miniz_oxide";
-            features = ["simd"];
-          }
-        ];
-        features = {
-          "unstable" = ["crc32fast/nightly"];
-          "zlib-rs" = ["flate2/zlib-rs"];
-        };
-      };
       "proc-macro2" = rec {
         crateName = "proc-macro2";
         version = "1.0.103";
@@ -1025,7 +993,7 @@
             name = "image";
             packageId = "image";
             usesDefaultFeatures = false;
-            features = ["png"];
+            features = ["webp"];
           }
           {
             name = "zerocopy";
@@ -1047,6 +1015,17 @@
             name = "num-traits";
             packageId = "num-traits";
           }
+        ];
+      };
+      "quick-error" = rec {
+        crateName = "quick-error";
+        version = "2.0.1";
+        edition = "2018";
+        sha256 = "18z6r2rcjvvf8cn92xjhm2qc3jpd1ljvcbf12zv0k9p565gmb4x9";
+        libName = "quick_error";
+        authors = [
+          "Paul Colomiets <paul@colomiets.name>"
+          "Colin Kiegel <kiegel@gmx.de>"
         ];
       };
       "quote" = rec {
@@ -1246,7 +1225,6 @@
         features = {
           "default" = ["std" "const-generics"];
         };
-        resolvedDefaultFeatures = ["const-generics" "default" "std"];
       };
       "syn" = rec {
         crateName = "syn";
