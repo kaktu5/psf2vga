@@ -6,6 +6,7 @@
 !.rustfmt.toml
 !.taplo.toml
 !Cargo.lock
+!Cargo.nix
 !Cargo.toml
 !flake.lock
 !flake.nix
