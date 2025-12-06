@@ -10,7 +10,6 @@ use color_eyre::{
     eyre::{bail, eyre},
 };
 use flate2::read::GzDecoder;
-use image::{Rgb, RgbImage};
 use zerocopy::{FromBytes, Immutable, KnownLayout};
 
 #[derive(Clone, Copy, FromBytes, Immutable, KnownLayout)]
@@ -269,8 +268,6 @@ impl From<Psf2Font> for PsfFont {
 
 impl PsfFont {
     const GZIP_MAGIC: u16 = 0x8B1F;
-    const BLACK: Rgb<u8> = Rgb([0, 0, 0]);
-    const WHITE: Rgb<u8> = Rgb([255, 255, 255]);
 
     pub fn from_file(file: File) -> Result<Self> {
         let mut reader = BufReader::new(file);
@@ -301,54 +298,5 @@ impl PsfFont {
         }
 
         bail!("File is neither PSF1 nor PSF2 format")
-    }
-
-    pub fn render_preview(&self) -> RgbImage {
-        const CHARS_PER_ROW: u32 = 32;
-        const PADDING: u32 = 2;
-
-        let cell_width = u32::from(self.glyph_size.0) + 2 * PADDING;
-        let cell_height = u32::from(self.glyph_size.1) + 2 * PADDING;
-
-        #[expect(clippy::cast_possible_truncation)]
-        let rows = self.glyphs.len().div_ceil(CHARS_PER_ROW as usize) as u32;
-
-        let img_width = CHARS_PER_ROW * cell_width + 2 * PADDING;
-        let img_height = rows * cell_height + 2 * PADDING;
-        let mut img = RgbImage::from_pixel(img_width, img_height, Self::BLACK);
-
-        for (index, glyph) in self.glyphs.iter().enumerate() {
-            #[expect(clippy::cast_possible_truncation)]
-            let (row, col) = (index as u32 / CHARS_PER_ROW, index as u32 % CHARS_PER_ROW);
-            let pos = (
-                PADDING + col * cell_width + PADDING,
-                PADDING + row * cell_height + PADDING,
-            );
-            self.draw_glyph(&mut img, glyph, pos);
-        }
-
-        img
-    }
-
-    fn draw_glyph(&self, img: &mut RgbImage, glyph: &[u8], pos: (u32, u32)) {
-        let (glyph_width, glyph_height) =
-            (u32::from(self.glyph_size.0), u32::from(self.glyph_size.1));
-        let bytes_per_row = glyph_width.div_ceil(8);
-
-        for row in 0..glyph_height {
-            for col in 0..glyph_width {
-                let byte_index = (row * bytes_per_row + col / 8) as usize;
-                let bit_index = 7 - (col % 8);
-
-                if let Some(&byte) = glyph.get(byte_index) {
-                    let color = if (byte >> bit_index) & 1 == 1 {
-                        Self::WHITE
-                    } else {
-                        Self::BLACK
-                    };
-                    img.put_pixel(pos.0 + col, pos.1 + row, color);
-                }
-            }
-        }
     }
 }
