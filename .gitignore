@@ -2,6 +2,7 @@
 !src/
 !src/**
 !.envrc
+!.gitattributes
 !.gitignore
 !.rustfmt.toml
 !.taplo.toml
