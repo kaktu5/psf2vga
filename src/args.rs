@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use clap::Parser;
 
-/// Convert a PSF console font to VGA text mode font (CP437)
+/// Convert a PC Screen Font to VGA text mode font (Code Page 437)
 #[derive(Parser)]
 pub struct Args {
     /// Input PSF font file
@@ -11,17 +11,13 @@ pub struct Args {
 
     /// Output VGA font file
     #[arg(env)]
-    pub output_path: PathBuf,
+    pub output_path: Option<PathBuf>,
 
-    /// Generate a preview image of the input font
+    /// Generate preview images
     #[arg(long)]
-    pub input_preview: bool,
+    pub preview: bool,
 
-    /// Generate a preview image of the output font
-    #[arg(long)]
-    pub output_preview: bool,
-
-    /// Use verbose output
+    /// Increase logging verbosity
     #[arg(short, long, env)]
     pub verbose: bool,
 }
