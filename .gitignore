@@ -1,4 +1,6 @@
 *
+!internal/
+!internal/**
 !src/
 !src/**
 !.envrc
