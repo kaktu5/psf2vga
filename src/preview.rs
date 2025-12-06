@@ -7,16 +7,28 @@ const PADDING: u32 = 2;
 const BLACK: Rgb<u8> = Rgb([0, 0, 0]);
 const WHITE: Rgb<u8> = Rgb([255, 255, 255]);
 
-impl PsfFont {
-    pub fn preview(&self) -> RgbImage {
-        render_preview(&self.glyphs, self.glyph_size)
+pub trait FontPreview {
+    fn preview(&self) -> RgbImage;
+}
+
+impl FontPreview for PsfFont {
+    fn preview(&self) -> RgbImage {
+        render_psf_preview(self)
     }
 }
 
-impl VgaFont {
-    pub fn preview(self) -> RgbImage {
-        render_preview(&self.glyphs, (8, self.height))
+impl FontPreview for VgaFont {
+    fn preview(&self) -> RgbImage {
+        render_vga_preview(self)
     }
+}
+
+pub fn render_psf_preview(font: &PsfFont) -> RgbImage {
+    render_preview(&font.glyphs, font.glyph_size)
+}
+
+pub fn render_vga_preview(font: &VgaFont) -> RgbImage {
+    render_preview(&font.glyphs, (8, font.height))
 }
 
 fn render_preview(glyphs: &[impl AsRef<[u8]>], glyph_size: (u8, u8)) -> RgbImage {
