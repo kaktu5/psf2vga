@@ -971,6 +971,10 @@ rec {
             features = [ "webp" ];
           }
           {
+            name = "tap";
+            packageId = "tap";
+          }
+          {
             name = "zerocopy";
             packageId = "zerocopy";
             features = [ "derive" ];
@@ -1212,6 +1216,17 @@ rec {
           "test" = [ "syn-test-suite/all-features" ];
         };
         resolvedDefaultFeatures = [ "clone-impls" "default" "derive" "full" "parsing" "printing" "proc-macro" ];
+      };
+      "tap" = rec {
+        crateName = "tap";
+        version = "1.0.1";
+        edition = "2015";
+        sha256 = "0sc3gl4nldqpvyhqi3bbd0l9k7fngrcl4zs47n314nqqk4bpx4sm";
+        authors = [
+          "Elliott Linder <elliott.darfink@gmail.com>"
+          "myrrlyn <self@myrrlyn.dev>"
+        ];
+
       };
       "terminal_size" = rec {
         crateName = "terminal_size";
