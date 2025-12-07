@@ -33,6 +33,7 @@
       checks = import ./internal/checks.nix {inherit lib pkgs self system;};
       devShells.default = import ./internal/devshell.nix {inherit lib pkgs;};
       formatter = import ./internal/formatter.nix {inherit lib pkgs;};
+      legacyPackages = import ./internal/legacy-packages.nix {inherit lib pkgs self system;};
       packages = import ./internal/packages.nix {inherit pkgs self system;};
     });
 }
