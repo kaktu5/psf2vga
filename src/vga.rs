@@ -24,7 +24,7 @@ impl TryFrom<PsfFont> for VgaFont {
     type Error = Report;
 
     fn try_from(psf: PsfFont) -> Result<Self> {
-        const QUESTION_MARK_IDX: usize = 0x3F;
+        const FALLBACK_CHAR_INDEX: usize = 0x3F;
 
         if psf.glyph_size.0 != 8 {
             return Err(eyre!(
@@ -36,7 +36,7 @@ impl TryFrom<PsfFont> for VgaFont {
         let height = psf.glyph_size.1 as usize;
         let mut vga = Self::new(psf.glyph_size.1);
 
-        let fallback_glyph: Vec<u8> = psf.glyphs[QUESTION_MARK_IDX]
+        let fallback_glyph: Vec<u8> = psf.glyphs[FALLBACK_CHAR_INDEX]
             .iter()
             .map(|&byte| !byte)
             .collect();

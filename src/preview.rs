@@ -13,22 +13,14 @@ pub trait FontPreview {
 
 impl FontPreview for PsfFont {
     fn preview(&self) -> RgbImage {
-        render_psf_preview(self)
+        render_preview(&self.glyphs, self.glyph_size)
     }
 }
 
 impl FontPreview for VgaFont {
     fn preview(&self) -> RgbImage {
-        render_vga_preview(self)
+        render_preview(&self.glyphs, (8, self.height))
     }
-}
-
-pub fn render_psf_preview(font: &PsfFont) -> RgbImage {
-    render_preview(&font.glyphs, font.glyph_size)
-}
-
-pub fn render_vga_preview(font: &VgaFont) -> RgbImage {
-    render_preview(&font.glyphs, (8, font.height))
 }
 
 fn render_preview(glyphs: &[impl AsRef<[u8]>], glyph_size: (u8, u8)) -> RgbImage {
@@ -65,12 +57,8 @@ fn draw_glyph(img: &mut RgbImage, glyph: &[u8], glyph_size: (u8, u8), pos: (u32,
             let bit_index = 7 - (col % 8);
 
             if let Some(&byte) = glyph.get(byte_index) {
-                let color = if (byte >> bit_index) & 1 == 1 {
-                    WHITE
-                } else {
-                    BLACK
-                };
-                img.put_pixel(pos.0 + col, pos.1 + row, color);
+                let is_set = (byte >> bit_index) & 1 == 1;
+                img.put_pixel(pos.0 + col, pos.1 + row, if is_set { WHITE } else { BLACK });
             }
         }
     }
