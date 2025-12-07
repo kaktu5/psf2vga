@@ -6,10 +6,8 @@
 }: let
   inherit (lib.attrsets) attrValues;
   inherit (pkgs) runCommandLocal;
-
-  packages' = self.packages.${system};
 in {
-  psf2vga = packages'.psf2vga.override {runTests = true;};
+  psf2vga = self.packages.${system}.psf2vga.override {runTests = true;};
 
   formatting =
     runCommandLocal "psf2vga-formatting-check" {
