@@ -15,7 +15,7 @@ pub struct Args {
     #[arg(long)]
     pub preview: bool,
 
-    /// Increase logging verbosity
+    /// Decrease logging verbosity
     #[arg(short, long)]
-    pub verbose: bool,
+    pub quiet: bool,
 }
