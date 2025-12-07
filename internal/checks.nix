@@ -16,7 +16,7 @@ in {
       };
     } ''
       fd . ${self} -t f -e md -X mdformat --check --wrap 120 '{}'
-      fd . ${self} -t f -e nix -E Cargo.nix -X alejandra --check --quiet '{}'
+      fd . ${self} -t f -e nix -E Cargo.nix -X alejandra --check '{}'
       fd . ${self} -t f -e rs -X rustfmt --check '{}'
       RUST_LOG='warn' fd . ${self} -t f -e toml -X taplo check '{}'
       touch $out
