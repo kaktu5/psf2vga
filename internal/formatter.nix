@@ -1,6 +1,7 @@
 {
   lib,
   pkgs,
+  ...
 }: let
   inherit (lib.attrsets) attrValues;
   inherit (pkgs) writeShellApplication;
