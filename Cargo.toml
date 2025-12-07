@@ -20,7 +20,7 @@ zerocopy = { features = ["derive"], version = "0.8.31" }
 [profile.release]
 codegen-units = 1
 lto = true
-opt-level = 'z'
+opt-level = 3
 strip = "symbols"
 
 [lints.clippy]
