@@ -4,6 +4,7 @@ use clap::Parser;
 
 /// Convert a PC Screen Font to VGA text mode font (Code Page 437)
 #[derive(Parser)]
+#[command(version)]
 pub struct Args {
     /// Input PSF font file
     pub input_path: PathBuf,
