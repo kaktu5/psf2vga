@@ -548,9 +548,9 @@ rec {
       };
       "flate2" = rec {
         crateName = "flate2";
-        version = "1.1.7";
+        version = "1.1.5";
         edition = "2018";
-        sha256 = "0xn6vsbwwi96nww8n30snfg982ij25hdjld6w8smgh40p6y2s5d2";
+        sha256 = "1yrvxgxyg7mzksmmcd9i7vc3023kbv3zhdsf8mkjm8c5ivfkxqxz";
         authors = [
           "Alex Crichton <alex@alexcrichton.com>"
           "Josh Triplett <josh@joshtriplett.org>"
@@ -581,6 +581,7 @@ rec {
           "cloudflare_zlib" = [ "any_zlib" "cloudflare-zlib-sys" ];
           "default" = [ "rust_backend" ];
           "libz-ng-sys" = [ "dep:libz-ng-sys" ];
+          "libz-rs-sys" = [ "dep:libz-rs-sys" ];
           "libz-sys" = [ "dep:libz-sys" ];
           "miniz-sys" = [ "rust_backend" ];
           "miniz_oxide" = [ "dep:miniz_oxide" ];
@@ -589,7 +590,7 @@ rec {
           "zlib-default" = [ "any_zlib" "libz-sys/default" ];
           "zlib-ng" = [ "any_zlib" "libz-ng-sys" ];
           "zlib-ng-compat" = [ "zlib" "libz-sys/zlib-ng" ];
-          "zlib-rs" = [ "any_impl" "dep:zlib-rs" ];
+          "zlib-rs" = [ "any_zlib" "libz-rs-sys" ];
         };
         resolvedDefaultFeatures = [ "any_impl" "default" "miniz_oxide" "rust_backend" ];
       };
