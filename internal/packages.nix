@@ -3,11 +3,9 @@
   self,
   system,
 }: let
-  inherit (pkgs) callPackage;
-
-  cargoNix = callPackage (self + /Cargo.nix) {};
-  packages' = self.packages.${system};
+  buildWith = pkgs: (pkgs.callPackage (self + /Cargo.nix) {}).rootCrate.build;
 in {
-  psf2vga = cargoNix.rootCrate.build;
-  default = packages'.psf2vga;
+  psf2vga = buildWith pkgs;
+  psf2vgaStatic = buildWith pkgs.pkgsStatic;
+  default = self.packages.${system}.psf2vga;
 }
