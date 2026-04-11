@@ -11,12 +11,12 @@ clap = { default-features = false, features = [
   "std",
   "usage",
   "wrap_help",
-], version = "4.5.53" }
+], version = "4.6.0" }
 color-eyre = "0.6.5"
-flate2 = "1.1.5"
-image = { default-features = false, features = ["webp"], version = "0.25.9" }
+flate2 = "1.1.9"
+image = { default-features = false, features = ["webp"], version = "0.25.10" }
 tap = "1.0.1"
-zerocopy = { features = ["derive"], version = "0.8.31" }
+zerocopy = { features = ["derive"], version = "0.8.48" }
 
 [profile.release]
 codegen-units = 1
