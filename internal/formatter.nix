@@ -1,7 +1,7 @@
 {
   lib,
   pkgs,
-  ...
+  rustfmt,
 }: let
   inherit (lib.attrsets) attrValues;
   inherit (pkgs) writeShellApplication;
@@ -9,7 +9,8 @@ in
   writeShellApplication {
     name = "psf2vga-nix3-fmt-wrapper";
     runtimeInputs = attrValues {
-      inherit (pkgs) alejandra fd mdformat rustfmt taplo;
+      inherit rustfmt;
+      inherit (pkgs) alejandra fd mdformat taplo;
     };
     text = ''
       fd "$@" -t f -e md -X mdformat --wrap 120 '{}'

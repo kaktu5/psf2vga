@@ -1,7 +1,7 @@
 {
   lib,
   pkgs,
-  ...
+  rustfmt,
 }: let
   inherit (lib.attrsets) attrValues;
   inherit (pkgs) mkShell;
@@ -9,22 +9,24 @@ in
   mkShell {
     name = "psf2vga-devshell";
     packages = attrValues {
+      # markdown
+      inherit (pkgs) mdformat;
+
+      # nix
+      inherit (pkgs) alejandra nixd;
+
+      # rust
+      inherit rustfmt;
       inherit
         (pkgs)
-        # rust
-        bacon
         cargo
         clippy
+        crate2nix
         rust-analyzer
         rustc
-        rustfmt
-        # nix
-        alejandra
-        crate2nix
-        deadnix
-        nil
-        nixd
-        statix
         ;
+
+      # toml
+      inherit (pkgs) taplo;
     };
   }
